@@ -8,7 +8,7 @@ Here’s a professional, recruiter-friendly **README** for your HFT Trading Dash
 
 **HFT Trading Dashboard** is a real-time high-frequency trading (HFT) simulation built with HTML, CSS, and JavaScript. It demonstrates professional trading concepts like market data monitoring, algorithmic trading strategies, risk management, and order execution. This project mimics the behavior of a professional HFT system and provides a visually interactive dashboard for monitoring trades, strategies, and performance metrics.
 
-**Why it’s resume-worthy:**
+**Why it’s worthy:**
 
 * Demonstrates understanding of real-time data processing and trading logic.
 * Showcases UI/UX design for financial dashboards.
@@ -120,7 +120,7 @@ Here’s a professional, recruiter-friendly **README** for your HFT Trading Dash
 
 ---
 
-## Learning Outcomes / Resume Points
+## Learning Outcomes
 
 * Built a **real-time trading dashboard** with interactive UI and live metrics.
 * Implemented **algorithmic trading strategies** and portfolio simulation.
