@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HFT Trading Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 80px 1fr;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00d4ff, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff88;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        .panel h3 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #00d4ff;
+        }
+
+        .strategies {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .strategy-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-2px);
+        }
+
+        .strategy-card.active {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .strategy-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .strategy-pnl {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chart-container {
+            height: 400px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .price {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .price.up { color: #00ff88; }
+        .price.down { color: #ff4757; }
+
+        .change {
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .change.up { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+        .change.down { background: rgba(255, 71, 87, 0.2); color: #ff4757; }
+
+        .chart {
+            height: calc(100% - 60px);
+            position: relative;
+            background: linear-gradient(45deg, transparent 0%, rgba(0, 212, 255, 0.02) 50%, transparent 100%);
+        }
+
+        .orders-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 20px;
+            height: 300px;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: calc(100% - 40px);
+        }
+
+        .order-book {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .order-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            padding: 3px 0;
+            font-size: 12px;
+            font-family: 'Monaco', monospace;
+        }
+
+        .order-row.header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 5px;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .bid { color: #00ff88; }
+        .ask { color: #ff4757; }
+
+        .metrics {
+            display: grid;
+            grid-template-rows: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00d4ff, #0099ff);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #00ff88, #00cc66);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #ff4757, #ff3742);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .activity-log {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .log-time {
+            color: #888;
+        }
+
+        .log-action.buy { color: #00ff88; }
+        .log-action.sell { color: #ff4757; }
+
+        /* Candlestick Chart Simulation */
+        .candlesticks {
+            display: flex;
+            align-items: end;
+            height: 100%;
+            gap: 2px;
+            padding: 20px;
+        }
+
+        .candle {
+            flex: 1;
+            position: relative;
+            min-width: 8px;
+        }
+
+        .candle-body {
+            width: 100%;
+            border-radius: 1px;
+        }
+
+        .candle.green .candle-body {
+            background: #00ff88;
+        }
+
+        .candle.red .candle-body {
+            background: #ff4757;
+        }
+
+        .latency-display {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-family: 'Monaco', monospace;
+            font-size: 12px;
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">HFT Pro (By Sayan Mandal)</div>
+            <div class="status">
+                <div class="status-indicator"></div>
+                <span>Connected</span>
+                <span class="latency-display" id="latency">Latency: 0.2ms</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Trading Strategies</h3>
+            <div class="strategies">
+                <div class="strategy-card active" data-strategy="market-making">
+                    <div class="strategy-name">Market Making</div>
+                    <div class="strategy-pnl">P&L: +$12,340</div>
+                </div>
+                <div class="strategy-card" data-strategy="arbitrage">
+                    <div class="strategy-name">Arbitrage</div>
+                    <div class="strategy-pnl">P&L: +$8,920</div>
+                </div>
+                <div class="strategy-card" data-strategy="momentum">
+                    <div class="strategy-name">Momentum</div>
+                    <div class="strategy-pnl">P&L: -$1,240</div>
+                </div>
+                <div class="strategy-card" data-strategy="mean-reversion">
+                    <div class="strategy-name">Mean Reversion</div>
+                    <div class="strategy-pnl">P&L: +$5,670</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button class="btn btn-success" id="startBtn">Start</button>
+                <button class="btn btn-danger" id="stopBtn">Stop</button>
+                <button class="btn btn-primary" id="resetBtn">Reset</button>
+            </div>
+        </div>
+
+        <div class="main-content panel">
+            <h3>Real-time Market Data</h3>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div>
+                        <span class="price up" id="currentPrice">$50,245.30</span>
+                        <span class="change up" id="priceChange">+2.45%</span>
+                    </div>
+                    <div>BTC/USD</div>
+                </div>
+                <div class="chart">
+                    <div class="candlesticks" id="candlesticks"></div>
+                </div>
+            </div>
+            
+            <div class="orders-section">
+                <h4 style="margin-bottom: 15px;">Order Book</h4>
+                <div class="orders-grid">
+                    <div class="order-book">
+                        <div class="order-row header">
+                            <span>Size</span>
+                            <span>Price</span>
+                            <span>Total</span>
+                        </div>
+                        <div id="askOrders"></div>
+                    </div>
+                    <div class="order-book">
+                        <div class="order-row header">
+                            <span>Size</span>
+                            <span>Price</span>
+                            <span>Total</span>
+                        </div>
+                        <div id="bidOrders"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Performance Metrics</h3>
+            <div class="metrics">
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #00ff88;" id="totalPnL">+$25,690</div>
+                    <div class="metric-label">Total P&L</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #00d4ff;" id="winRate">78.5%</div>
+                    <div class="metric-label">Win Rate</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #ff00ff;" id="volume">$2.1M</div>
+                    <div class="metric-label">Volume Today</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" style="color: #ffa500;" id="orders">1,247</div>
+                    <div class="metric-label">Orders/Min</div>
+                </div>
+            </div>
+            
+            <h3 style="margin-top: 30px;">Activity Log</h3>
+            <div class="activity-log" id="activityLog"></div>
+        </div>
+    </div>
+
+    <script>
+        // HFT Engine - Simulated C++ logic in JavaScript
+        class HFTEngine {
+            constructor() {
+                this.isRunning = false;
+                this.basePrice = 50245.30;
+                this.currentPrice = this.basePrice;
+                this.orders = [];
+                this.portfolio = { pnl: 25690, volume: 2100000, winRate: 78.5 };
+                this.strategies = {
+                    'market-making': { active: true, pnl: 12340 },
+                    'arbitrage': { active: false, pnl: 8920 },
+                    'momentum': { active: false, pnl: -1240 },
+                    'mean-reversion': { active: false, pnl: 5670 }
+                };
+                this.latency = 0.2;
+            }
+
+            start() {
+                this.isRunning = true;
+                this.marketDataFeed();
+                this.orderBookUpdates();
+                this.executeStrategies();
+                this.updateMetrics();
+            }
+
+            stop() {
+                this.isRunning = false;
+            }
+
+            // Market data feed simulation
+            marketDataFeed() {
+                if (!this.isRunning) return;
+                
+                // Simulate price movement
+                const volatility = 0.001;
+                const randomWalk = (Math.random() - 0.5) * 2 * volatility;
+                this.currentPrice *= (1 + randomWalk);
+                
+                // Update price display
+                const priceElement = document.getElementById('currentPrice');
+                const changeElement = document.getElementById('priceChange');
+                const change = ((this.currentPrice - this.basePrice) / this.basePrice) * 100;
+                
+                priceElement.textContent = `$${this.currentPrice.toFixed(2)}`;
+                changeElement.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                
+                priceElement.className = change >= 0 ? 'price up' : 'price down';
+                changeElement.className = change >= 0 ? 'change up' : 'change down';
+                
+                // Update candlestick chart
+                this.updateChart();
+                
+                // Simulate latency
+                this.latency = 0.1 + Math.random() * 0.3;
+                document.getElementById('latency').textContent = `Latency: ${this.latency.toFixed(1)}ms`;
+                
+                setTimeout(() => this.marketDataFeed(), 100 + Math.random() * 100);
+            }
+
+            // Order book simulation
+            orderBookUpdates() {
+                if (!this.isRunning) return;
+                
+                const askContainer = document.getElementById('askOrders');
+                const bidContainer = document.getElementById('bidOrders');
+                
+                askContainer.innerHTML = '';
+                bidContainer.innerHTML = '';
+                
+                // Generate ask orders
+                for (let i = 0; i < 10; i++) {
+                    const price = this.currentPrice + (i + 1) * 0.1;
+                    const size = Math.random() * 5 + 0.1;
+                    const total = price * size;
+                    
+                    const row = document.createElement('div');
+                    row.className = 'order-row ask';
+                    row.innerHTML = `
+                        <span>${size.toFixed(3)}</span>
+                        <span>${price.toFixed(2)}</span>
+                        <span>${total.toFixed(0)}</span>
+                    `;
+                    askContainer.appendChild(row);
+                }
+                
+                // Generate bid orders
+                for (let i = 0; i < 10; i++) {
+                    const price = this.currentPrice - (i + 1) * 0.1;
+                    const size = Math.random() * 5 + 0.1;
+                    const total = price * size;
+                    
+                    const row = document.createElement('div');
+                    row.className = 'order-row bid';
+                    row.innerHTML = `
+                        <span>${size.toFixed(3)}</span>
+                        <span>${price.toFixed(2)}</span>
+                        <span>${total.toFixed(0)}</span>
+                    `;
+                    bidContainer.appendChild(row);
+                }
+                
+                setTimeout(() => this.orderBookUpdates(), 50);
+            }
+
+            // Strategy execution
+            executeStrategies() {
+                if (!this.isRunning) return;
+                
+                for (const [strategyName, strategy] of Object.entries(this.strategies)) {
+                    if (strategy.active) {
+                        this.executeStrategy(strategyName);
+                    }
+                }
+                
+                setTimeout(() => this.executeStrategies(), 10);
+            }
+
+            executeStrategy(strategyName) {
+                // Simulate different trading strategies
+                const shouldTrade = Math.random() < 0.01; // 1% chance per tick
+                
+                if (shouldTrade) {
+                    const action = Math.random() > 0.5 ? 'BUY' : 'SELL';
+                    const quantity = Math.random() * 10 + 1;
+                    const price = this.currentPrice + (Math.random() - 0.5) * 0.5;
+                    
+                    this.logActivity(`${action} ${quantity.toFixed(2)} @ $${price.toFixed(2)} [${strategyName}]`, action.toLowerCase());
+                    
+                    // Update strategy P&L
+                    const pnlChange = (Math.random() - 0.4) * 100; // Slight positive bias
+                    this.strategies[strategyName].pnl += pnlChange;
+                    this.portfolio.pnl += pnlChange;
+                }
+            }
+
+            updateChart() {
+                const candlesContainer = document.getElementById('candlesticks');
+                
+                // Create new candle
+                if (candlesContainer.children.length >= 50) {
+                    candlesContainer.removeChild(candlesContainer.firstChild);
+                }
+                
+                const candle = document.createElement('div');
+                candle.className = `candle ${Math.random() > 0.5 ? 'green' : 'red'}`;
+                
+                const height = 20 + Math.random() * 60;
+                candle.innerHTML = `<div class="candle-body" style="height: ${height}px;"></div>`;
+                
+                candlesContainer.appendChild(candle);
+            }
+
+            updateMetrics() {
+                if (!this.isRunning) return;
+                
+                document.getElementById('totalPnL').textContent = `+$${Math.round(this.portfolio.pnl).toLocaleString()}`;
+                document.getElementById('winRate').textContent = `${(this.portfolio.winRate + (Math.random() - 0.5) * 0.1).toFixed(1)}%`;
+                document.getElementById('volume').textContent = `$${(this.portfolio.volume / 1000000).toFixed(1)}M`;
+                document.getElementById('orders').textContent = Math.round(1200 + Math.random() * 100);
+                
+                setTimeout(() => this.updateMetrics(), 1000);
+            }
+
+            logActivity(message, type) {
+                const logContainer = document.getElementById('activityLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                
+                const time = new Date().toLocaleTimeString();
+                entry.innerHTML = `
+                    <span class="log-action ${type}">${message}</span>
+                    <span class="log-time">${time}</span>
+                `;
+                
+                logContainer.insertBefore(entry, logContainer.firstChild);
+                
+                // Keep only last 50 entries
+                while (logContainer.children.length > 50) {
+                    logContainer.removeChild(logContainer.lastChild);
+                }
+            }
+        }
+
+        // Initialize HFT Engine
+        const hftEngine = new HFTEngine();
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', () => {
+            hftEngine.start();
+            hftEngine.logActivity('HFT Engine started', 'buy');
+        });
+
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            hftEngine.stop();
+            hftEngine.logActivity('HFT Engine stopped', 'sell');
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            location.reload();
+        });
+
+        // Strategy selection
+        document.querySelectorAll('.strategy-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.strategy-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                const strategy = card.dataset.strategy;
+                // Toggle strategy active state
+                hftEngine.strategies[strategy].active = !hftEngine.strategies[strategy].active;
+                
+                hftEngine.logActivity(`${strategy} strategy ${hftEngine.strategies[strategy].active ? 'activated' : 'deactivated'}`, 'buy');
+            });
+        });
+
+        // Auto-start simulation
+        setTimeout(() => {
+            hftEngine.start();
+        }, 1000);
+    </script>
+</body>
+</html>
